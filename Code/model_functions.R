@@ -9,19 +9,6 @@ parms = data.frame(
   p = 1600 #virus/cell/day 
 )
 
-ODEmodel_latent = function(t, x, parms){ #these inputs are convention for ODE models in R: 
-  #t = time, x = vector of population sizes at current time, parms = parameters
-  with(as.list(c(parms, x)), {
-    dS <- lambda - mu * S - beta * S * V
-    dI0 <- beta * S * V - mu * I0 - alpha * I0
-    dI <- alpha * I0 -  delta * I
-    dV <- p * I - c * V 
-    
-    res <- c(dS, dI0, dI, dV)
-    list(res)
-  })
-}
-
 stochastic_model_latent = function(max_time, initI = 1, infectivity = 1.05, parms, 
                                    tao = 0.1, seed_set = NULL){
   if(!is.null(seed_set)) set.seed(seed_set) #reproduce results
@@ -84,7 +71,6 @@ stochastic_model_latent = function(max_time, initI = 1, infectivity = 1.05, parm
     }
   }
 
-  
   out = data.frame(
     time = time_vec[1:out_index],
     I0 = I0_vec[1:out_index],
@@ -94,3 +80,17 @@ stochastic_model_latent = function(max_time, initI = 1, infectivity = 1.05, parm
   out$viral_load = with(out, ifelse(V > 1, log10(V), 0))
   out
 }
+
+ODEmodel_latent = function(t, x, parms){ #these inputs are convention for ODE models in R: 
+  #t = time, x = vector of population sizes at current time, parms = parameters
+  with(as.list(c(parms, x)), {
+    dS <- lambda - mu * S - beta * S * V
+    dI0 <- beta * S * V - mu * I0 - alpha * I0
+    dI <- alpha * I0 -  delta * I
+    dV <- p * I - c * V 
+    
+    res <- c(dS, dI0, dI, dV)
+    list(res)
+  })
+}
+
