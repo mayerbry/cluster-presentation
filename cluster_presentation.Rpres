@@ -11,6 +11,7 @@ pre code.bash {
   background: black;
   color: white;
   font-size: 1em;
+
 }
 </style>
 
@@ -37,14 +38,13 @@ Topics
 
 Simulating infection
 ========================================================
-Need a nice figure here
+Need a figure here
 
 
 Model code
 ========================================================
 ```{r, warning = F, message = F}
 library(knitr)
-library(dplyr) #<- we will talk about this
 library(ggplot2) 
 theme_set(theme_classic())
 
@@ -81,7 +81,7 @@ ggplot(data = example_simulations,
   geom_line()
 
 ```
-Note: Looping and stacking is a bad way to do things in R.    
+Note: Looping and stacking is inefficient in R.    
 
 Multiple simulations
 ========================================================
@@ -103,7 +103,7 @@ If this scaled linearly, we would've expected about 5 seconds but this approach 
 
 Multiple simulations
 ========================================================
-My actual simulations:
+The actual simulations requirements:
 ```{r, warning = F, message = F, echo = T}
 total_simulations = 1000
 I0s = c(1:10, 15, 10 * 2:9, 1:4 * 10^2)
@@ -143,6 +143,8 @@ getDoParWorkers()
 
 Using foreach
 ========================================================
+id: foreach_sim
+
 ```{r, warning = F, message = F, echo = T, cache = T}
 total_simulations = 1000
 
@@ -163,7 +165,7 @@ Versus 5 minutes, so pretty good improvement: partially from more efficient stac
 The plyr package
 ========================================================
 
-The `plyr` package contains a set of functions that stacks R objects more efficiently. The functions follow the `apply` method of programming that is a classic convention for R programmers.
+The `plyr` package contains a set of functions that stacks R objects more efficiently. The functions follow the `apply` method of programming (which is just looping).
 ```{r}
 ?apply
 ```
@@ -235,6 +237,8 @@ This did even better than foreach without any parallel processing!
 
 Adding parallel computing in plyr is simple.
 ========================================================
+id: plyr_sim
+
 ```{r, warning = F, message = F, echo = T, cache = T}
 total_simulations = 1000
 
@@ -252,16 +256,341 @@ rm(example_simulations)
 ```
 About 2x improvement.
 
-Connecting to rhino
+Connecting to the server
+========================================================
+I use the rhino servers through scicomp. It requires an account and a "fred" drive.
+https://teams.fhcrc.org/sites/citwiki/SciComp/Pages/How%20to%20get%20or%20use%20an%20account.aspx
+
+I will be doing tasks using Bash in the command line (Terminal app on a mac). For windows, you can use PuTTY (it is free):
+http://sharedresources.fredhutch.org/libresources/putty
+
+Any code with black background is command line code.
+
+Connecting to rhino - through the command line
 ========================================================
 ```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
-Bryans-iMac-2:~ bmayer$ ssh bmayer@rhino.fhcrc.org
+ssh bmayer@rhino.fhcrc.org
 ``` 
 and then enter your password when prompted
 
-Connecting to rhino
-========================================================
-Then this might happen
+Then this might happen (enter yes)
 
 ![alt text](images/connect.png)
+
+Connecting to rhino - using PuTTY (download)
+========================================================
+
+Download PuTTY:
+http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
+The red box is what I downloaded.    
+![alt text](images/putty_install.png)
+
+Connecting to rhino - using PuTTY (connecting)
+========================================================
+
+Most of the settings are already set, just fill in the server and click Open.    
+![alt text](images/putty_connect.png)
+
+Connecting to rhino - using PuTTY (connecting)
+========================================================
+ Then click yes.    
+![alt text](images/putty_connect2.png)    
+And then login.    
+![alt text](images/putty_login.png)
+
+All of code in the black boxes is meant to be used in the command line and should work using PuTTY.
+
+
+Create the remote directory
+========================================================
+
+
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+mkdir cluster-example
+mkdir installed_packages
+```
+
+Make this directory to remotely install R packages (next slide)
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+mkdir cluster-example
+cd cluster-example
+mkdir installed_packages
+```
+
+Open R
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+R
+```
+
+To quit R:
+```{r, eval = F} 
+quit()
+```
+
+
+How to check if a package is available.
+========================================================
+Check its version: will throw an error if the package is not available.
+```{r, eval = F} 
+packageVersion("ggplot2")
+```
+ggplot2 is installed but it's an old version. So let's install and use a more updated version:
+```{r, eval = F} 
+install.packages("ggplot2", lib = "installed_packages/") 
+library(ggplot2, lib.loc = "installed_packages/")
+packageVersion("ggplot2")
+```
+
+Note: When you load R on the server, it will always set your working directory to the source file locations. So all paths are relative to that. Get the absolute path with `getwd()`.
+
+
+Transferring files from local machine to the remote machine
+========================================================
+Four options:    
+1) Use the command line (from the local computer transferring to the server in the correct directory). This can be a pain and will require a password if you don't set some advanced settings.
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+scp model_functions.R bmayer@rhino.fhcrc.org:/home/bmayer/cluster-example/
+```
+
+2) Use an ftp client (there are a few free ones for windows).
+https://cyberduck.io/?l=en
+
+3) Use NoMachine: remotely connects to a linux machine with graphical interface
+https://teams.fhcrc.org/sites/citwiki/SciComp/Pages/Connecting%20to%20Session%20Server%20from%20Mac.aspx
+
+4) Do your programming from the shell using a text editor like vim or emacs (very high learning curve).
+
+Using Cyberduck
+========================================================
+After Cyberduck is installed click on "Open Connection". Select "SFTP (SSH File Transfer Protocol)" from the dropdown. Enter the server name (rhino.fhcrc.org) , leave the port as 22, and then enter your hutchnet ID and password. Click connect.
+
+![alt text](images/cyberduck_login.png)
+
+Using Cyberduck
+========================================================
+This is what the interface looks like (on a Mac) after connected. You can drag and drop files and folders between your local machine and your server directory.
+
+![alt text](images/cyberduck_interface.png)
+
+Using R on the server
+========================================================
+When using R through the command line, a lot of convienent functionality is lost. For example, it is no longer easy to highlight and run chunks of code. However, using R on the server frees up your local machine for other tasks if you are conducting computational intensive processses (like using all of your cores for parallel processing).    
+
+One option to continue using the interactive console, is to utilize the `source` function to read in scripts that you can edit outside of R then pass onto your remote drive using software like Cyberduck.
+
+Grabbing nodes
+========================================================
+
+https://teams.fhcrc.org/sites/citwiki/SciComp/Pages/Grab%20Commands.aspx
+
+```{r, echo = F}
+node_cmds = c("grabfullnode", "12 processors on one node",
+"grabnode", "6 processors on one node",
+"grabhalfnode", "6 processors on one node (same as grabnode)",
+"grabquarternode", "3 processors one one node",
+"grabcpu", '1 processor',
+"grabR",' 1 processor (starts an R shell)',
+"grablargenode", "32 processors on a large-memory node")
+node_table = as.data.frame(matrix(node_cmds, nrow = 7, byrow = T))
+kable(node_table, col.names = c("bash command", "total cores"))
+
+```
+
+Grabbing nodes (grabnode command)
+========================================================
+Just going to use grabnode for this example. These commands don't actually grant you access (you already have access to these cores) but they tell the server what your intentions are. The link contains information on server etiquette: do not request more cores in your R session than you grabbed.
+
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+grabnode    
+```
+![alt text](images/grabnode.png)     
+
+You may have to accept key changes like when you first log on to the server.
+
+Running R scripts on the server
+========================================================
+The general code to run an R script on the server:
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+R CMD BATCH myR_script.R
+```
+
+This will create a myR.script.Rout (default naming) which contains an echo of all the code, results that were printed, and a process time statement at the end. You can check the file from the command line with:
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+less myR_script.Rout
+```
+
+
+To suppress the code echo and only output printed results add the `--slave` option. We also can add a second file name (results.txt) to name the output file.
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+R CMD BATCH --slave myR_script.R results.txt
+```
+
+Running the simulation script
+========================================================
+[foreach example](#/foreach_sim)    
+[plyr example](#/plyr_sim)
+
+Add the following to scripts to the server directory (for me "/users/bmayer/cluster-example/" from earlier):    
+[model function code](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/model_functions.R)    
+[a script to run simulations](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_server_code.R)
+
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+R CMD BATCH --slave test_server_code.R results.txt
+less results.txt
+```
+
+Performance of simulation script
+========================================================
+
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+less results.txt
+```
+![alt text](images/results.png)    
+plyr performance is far superior and it scaled closely to the estimates from the earlier simulations. 
+
+Note that the results were only performance checks and that nothing from the model simulations was saved to be used. Alternatively, this script could've been run within R with `source("test_server_code.R")` and then example_simulations would be available for analysis in the console (after a 15 minute wait).
+
+Requesting a batch job using slurm
+========================================================
+Another option is to send your job to the server where it will be assigned to a node. One advantage of this process is that you don't have to remain logged on to the server while your job completes.
+
+https://teams.fhcrc.org/sites/citwiki/SciComp/Pages/R%20Howto%20for%20Gizmo.aspx
+
+There are a lot of options and commands that will not be covered here.
+
+Batch job using slurm - R script
+========================================================
+[A script for bash simulations](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_batch_code.R)
+
+Key differences from test_server_code.R:    
+1. Removed the `foreach` method because it was too slow.
+2. In addition to 10000 simulations, added 5 different parameter sets to cycle through (nested ldply).
+3. Instead of saving all of the raw output, aggregated the results.
+
+Took 1.2 minutes last time, with 2x more simulations, expect about 2ish minutes now.
+
+Batch job using slurm - command line
+========================================================
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+sbatch --cpus-per-task=6 --time=0-2 --wrap="R --no-save --no-restore < test_batch_code.R"
+```
+
+Important options here:    
+1) We request a node with at least 6 cores for use using cpus-per-task=6    
+2) We estimate the time we require (days-hours) with time=0-2    
+3) There are additional options to email yourself updates (when the job finishes)   
+4) Leave R options (no-save and no-restore) within the -wrap
+
+Check on your jobs (with your hutchID):    
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+squeue -u bmayer
+```
+
+Sometimes the job will be queued for awhile. The wait time depends on the cores and the time requested. Waiting time seems to increase over the week (Monday morning shortest, Friday afternoon longest). You can cancel your jobs using scancel followed by the JOBID number (found using squeue).
+
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+scancel 0000000x
+```
+
+Batch job using slurm
+========================================================
+An output file is created for each batch job (it will look like slurm-JOBID#.out, unless designated otherwise). The output file is updated as the job runs so you can see what code is currently being executed. If the job terminated early because of a bug, that will be the last line written to the .out file. You can inspect this code using `less`.    
+
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+less slurm-0000000x.out
+```
+
+After the job is finished, can quickly preview results:
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+less batch_results.csv
+```
+
+Additional parallelization options
+========================================================
+Each job is sent to a node where the cores are accessed for your program. Additionally, you have access to a lot of nodes (120?). Taking advantage of this can be very powerful:
+- Simplest method: Just send mulitple jobs to the server (rerun the script and make sure you change output variable names in the R code)
+- Write more complicated bash scripts that use loops: have the loop pass in values to R that can be used for different simulation settings.
+
+Scripting loops
+========================================================
+A scripting loop can just repeatedly send jobs to the server but it can also pass values into R.
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+#!/bin/bash
+
+for x in {1,2}; do
+sbatch --cpus-per-task=6 --time=0-1 --wrap="R --no-save --no-restore '--args inf_set=$x' < test_loopbatch_code.R"
+done
+```
+
+The '--args inf_set=$x' (single quotes required) defines the arguments to be passed (will be called inf_set in R). The $x grabs the values from x given in the loop command. Bash can be finicky, for example, don't add spaces between values in the loop.    
+
+This code isn't for copying and pasting. Need to use a bash script file (.sh).    
+[bash script for loop](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/example_bash_loop.sh)
+
+Scripting loops - passing values into R
+========================================================
+
+The following R code is necessary:
+```{r, eval = F}
+args<-(commandArgs(TRUE));
+if(length(args)==0){
+  print("No arguments supplied.")
+
+}else{
+  for(i in 1:length(args)){
+    eval(parse(text=args[[i]]))
+  }
+  print(args)
+}
+```
+This tells R to check if there were values passed in. The variable name will come from the bash script. Then you can use that input to select certain parameter ranges or change output file names:
+
+```{r, eval = F}
+#use the inputted values from the bash loop to reduce out subset (change output name)
+if(inf_set == 1) infectivity_list = infectivity_list[1]
+if(inf_set == 2) infectivity_list = infectivity_list[2]
+out_file_name = paste("batch_results/batch_results_loop", inf_set, ".csv", sep = "") #output name varies by input; save in folder
+```
+
+
+Running the bash script
+========================================================
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+./example_bash_loop.sh
+```
+
+If you get a weird permission error, may need to do the following:
+```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
+chmod u+x example_bash_loop.sh
+```
+
+Output from mulitple jobs
+========================================================
+If you are running multiple jobs using the same script, make sure the output file names change or they will just be overwritten.    
+
+With multiple output files, it may be necessary to write a script to combine them.  Here is the script for this example.
+```{r, eval = F}
+#remember this has to be in the cluster-example folder to access the relative path "batch_results/"
+library(plyr)
+
+output_file_names = list.files("batch_results/")
+
+output = ldply(output_file_names, function(file_name){
+  read.csv(paste("batch_results/", file_name, sep = ""), stringsAsFactors = F)
+})
+
+write.csv(output, "combined_batchloop_output.csv", row.names = F)
+```
+[R script to combine output](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/combine_batch_output.R)
+
+
+Workflow using the servers
+========================================================
+A big drawback of using the server/command line is that the interactive RStudio experience is lost.    
+
+Tips:
+- Identify the output you want from your runs (.Rda files, csv's, plots)
+- Find a workflow: find a comfortable way to quickly access your results and update code as needed (i.e., using NoMachine or Cyberduck to pass things back and forth)
+- Anticipate bugs: don't let a 15 hour batch run go to waste because you wrote a write.csv command incorrectly at the end. Run an example batch first that should run quickly to check for bugs. Consider outputting results or printing status reports periodically.
+- Parallelizing with nodes (looping batch scripts) means you may have to combine your output manually.
 
