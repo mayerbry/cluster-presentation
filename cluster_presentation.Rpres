@@ -50,7 +50,7 @@ Two parameters strongly govern this probability:
 2. How many cells are initially infected from an initial exposure?
 
 
-![alt text](images/model.png)
+![alt text](images/model_small.png) 
 
 
 
@@ -70,15 +70,22 @@ Example of a simulation:
 ========================================================
 type: sub-section
 
-```{r, warning = F, message = F, fig.width = 12, fig.height = 4, fig.align='center'}
+```{r, warning = F, message = F}
 start_time = Sys.time()
 example = stochastic_model_latent(max_time = 100, initI = 10, infectivity = 1.5, parms)
 print(Sys.time() - start_time)
+```
+The simulation function takes four arguments: 1) the total time to run it for (max_time); 2) initial infected cells (initI); 3) initial cell infectivity (infectivity); and 4) parms (this a data.frame that is created in model_function.R).
+
+Example of a simulation:
+========================================================
+The output of interest is time and corresponding viral load at that time.
+
+```{r, warning = F, message = F, fig.width = 12, fig.height = 4, fig.align='center'}
 
 ggplot(data = example, aes(x = time, y = viral_load)) + geom_line()
 
 ```
-
 In this single simulation, the infection was sustained.
 
 Multiple simulations example
