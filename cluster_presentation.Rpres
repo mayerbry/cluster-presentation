@@ -345,13 +345,15 @@ When using R through the command line, a lot of convienent functionality is lost
 
 One option to continue using the interactive console, is to utilize the `source` function to read in scripts that you can edit outside of R then pass onto your remote drive using software like Cyberduck.
 
-Remote workflows are different
+Remote workflows
 ========================================================
 id: workflow
 
 Interaction between your computer and the remote workspace.    
     
 ![alt text](images/workflow.png)
+
+Note: git is also available on the server.
 
 
 Running R scripts on the server
