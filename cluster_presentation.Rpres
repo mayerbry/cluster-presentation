@@ -35,17 +35,19 @@ Topics
 3. Working on the remote machine
 4. Sending jobs to the cluster
 
+[All materials and code available on my fhcrc github](https://github.fhcrc.org/bmayer/cluster-presentation/)
 
-Simulation example
+
+Simulation stochastic model
 ========================================================
-type: section
+type: sub-section
 
 
 When a virus infects a cell, there are two outcomes: 1) many cells become infected and the infection is sustained (what we observe) or 2) only a few cells become infected and the infection is transient (not generally detected) - stochastic extinction. 
 
 Two parameters strongly govern this probability:    
-1. Cell infectivity - at initial exposure, one cell is infected, how many cells will it infect during its lifespace?    
-2. How many cells are initially infected (from an exposure)?
+1. Cell infectivity at initial exposure - if one cell is infected, how many cells will it infect during its lifetime?    
+2. How many cells are initially infected from an initial exposure?
 
 
 ![alt text](images/model.png)
@@ -62,7 +64,7 @@ theme_set(theme_classic())
 source("Code/model_functions.R") #model functions in here
 ```
 
-[model function code](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/model_functions.R)    
+[model function code](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/model_functions.R) 
 
 Example of a simulation:
 ========================================================
@@ -81,7 +83,6 @@ In this single simulation, the infection was sustained.
 
 Multiple simulations example
 ========================================================
-type: sub-section
 
 ```{r, warning = F, message = F, fig.width = 12, fig.height = 4, fig.align='center', cache = T}
 total_simulations = 10
@@ -124,28 +125,31 @@ Note: Looping and stacking is inefficient in R.
 
 Multiple simulations - planning ahead
 ========================================================
-The actual simulation requirements:
+The actual simulation requirements
 ```{r, warning = F, message = F, echo = T}
 total_simulations = 1000
 I0s = c(1:10, 15, 10 * 2:9, 1:4 * 10^2)
-infectivity_set = c(1.01, 1.05, 1.1, seq(1.15, 1.3, 0.05), 
-                    seq(1.35, 1.65, 0.05), seq(1.7, 2.15, 0.05))
+infectivity_set = seq(1, 2, 0.05)
 
 est_time = 5 * length(I0s) * length(infectivity_set)/24
-print(paste(est_time, "days"))
+cat(paste(est_time, "days"))
 
 ```
+
+In this example, 1000 simulations per each combination of parameter settings. Actually did 10,000 each overnight.
 
 Local machine parallelization
 ========================================================
 type: section
 
-1. The `doParallel` package
-2. The `plyr` package (uses doParallel)
+1. The `doParallel` package    
+2.  Using `foreach` (from doParallel)
+3. The `plyr` package (uses doParallel)
 
 the doParallel package
 ========================================================
 type:sub-section
+id:parallel_setup
 
 https://cran.r-project.org/web/packages/doParallel/vignettes/gettingstartedParallel.pdf
 ```{r, warning = F}
@@ -159,6 +163,9 @@ How many is R using (1 is default)?
 ```{r, warning = F}
 getDoParWorkers()
 ```
+
+Registering cores in R
+========================================================
 Register your cores and check:
 ```{r, warning = F}
 registerDoParallel(2)
@@ -167,7 +174,10 @@ getDoParWorkers()
 
 Using foreach
 ========================================================
+type: sub-section
 id: foreach_sim
+
+The `foreach` call is very similar to writing a loop. In `foreach`, there are two arguments. First, you define what you are loop over (here we name that sequence 'run'). Then we set how the results are combined (`.combine = rbind`, which stacks rows with rbind). Then you call `%dopar% {}` with the task inside of the brackets. If parallelization is not necessary, you can use `%do%`.
 
 ```{r, warning = F, message = F, echo = T, cache = T}
 total_simulations = 1000
@@ -180,7 +190,9 @@ example_simulations =  foreach(run = 1:total_simulations, .combine=rbind) %dopar
   results
 }
 print(Sys.time() - start_time)
+```
 
+```{echo = F}
 rm(example_simulations)
 ```
 Versus 5 minutes, so pretty good improvement.
@@ -244,6 +256,19 @@ rm(example_simulations)
 ```
 About 2x improvement.
 
+Note: to use `.parallel = T`, [doParallel package needs to be loaded and cores need to be registered](#/parellel_setup)    
+
+
+plyr vs. foreach (an opinion)
+========================================================
+type: sub-section
+
+- Generally, if the resulting output is very big (in this example, > 1 million rows) then the computing solution needs to efficiently handle the data. In this case, `ldply` seems to be a superior solution to `foreach` using `.combine = rbind`. However, I did not search for better stacking methods for `foreach` and even `ldply` can become limited at this data size. 
+
+- If the method is slow (e.g., MCMC computations) but the resulting output isn't very big, then this `foreach` implementation should be comparable.
+
+- Large data manipulations: `data.table` and `dplyr` have implementations to make this more efficient.
+
 Using the server
 ========================================================
 type:section
@@ -306,35 +331,35 @@ How to check if a package is available.
 ========================================================
 Check its version: will throw an error if the package is not available.
 ```{r, eval = F} 
-packageVersion("ggplot2")
+packageVersion("data.table")
 ```
-ggplot2 is installed but it's an old version. So let's install and use a more updated version:
+data.table is not installed, so let's install it.
 ```{r, eval = F} 
-install.packages("ggplot2", lib = "installed_packages/") 
-library(ggplot2, lib.loc = "installed_packages/")
-packageVersion("ggplot2")
+install.packages("data.table", lib = "installed_packages/") 
+library(data.table, lib.loc = "installed_packages/")
+packageVersion("data.table")
 ```
 
-Note: When you load R on the server, it will always set your working directory to the source file locations. So all paths are relative to that. Get the absolute path with `getwd()`.
+Note: When you load R on the server, it will always set your working directory to where you called R from. So all paths are relative to that. Get the absolute path with `getwd()`.
 
 
-Transferring files from local machine to the remote machine
+Transferring R scripts and files from local machine to the remote machine
 ========================================================
 Four options:    
-1) Use the command line (from the local computer transferring to the server in the correct directory). This can be a pain and will require a password if you don't set some advanced settings.
+1. Use the command line (from the local computer transferring to the server in the correct directory). This can be a pain and will require a password if you don't set some advanced settings.
 ```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
 scp model_functions.R bmayer@rhino.fhcrc.org:/home/bmayer/cluster-example/
 ```
 
-2) Use an ftp client (there are a few free ones for windows).    
+2. Use an ftp client (there are a few free ones for windows).    
 https://cyberduck.io/?l=en    
 [Using Cyberduck](#/cyberduck_demo)    
 
 
-3) Use NoMachine: remotely connects to a linux machine with graphical interface
+3. Use remote desktop software. For example, NoMachine remotely connects to a linux machine with graphical interface.
 https://teams.fhcrc.org/sites/citwiki/SciComp/Pages/Connecting%20to%20Session%20Server%20from%20Mac.aspx
 
-4) Do your programming from the shell using a text editor like vim or emacs (very high learning curve).
+4. Do your programming from the shell using a text editor like vim or emacs (very high learning curve) combined with 1. to transfer figure and data files.
 
 Using R on the server
 ========================================================
@@ -412,9 +437,9 @@ In this example, we use grabnode and the request 6 cores for duration of 1 total
 ```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
 grabnode    
 ```
-![alt text](images/grabnode.png)     
+![This is PuTTY!](images/grabnode.png)     
 
-You may have to accept key changes like when you first log on to the server.
+You may have to accept key changes like when you first logged on to the server.
 
 
 
@@ -443,11 +468,11 @@ plyr performance is far superior and it scaled closely to the estimates from the
 
 Note that the results were only performance checks and that nothing from the model simulations was saved to be used. Alternatively, this script could've been run within R with `source("test_server_code.R")` and then example_simulations would be available for analysis in the console (after a 15 minute wait).
 
-Requesting a batch job using slurm
+Sending a batch job using slurm
 ========================================================
 type: sub-section
 
-Another option is to send your job to the server where it will be assigned to a node. One advantage of this process is that you don't have to remain logged on to the server while your job completes.
+Another option is to send your job to the server where it will be assigned to a node. One advantage of this process is that you don't have to remain logged on to the server while your job completes. One disadvantage is that there is no interactive element.
 
 https://teams.fhcrc.org/sites/citwiki/SciComp/Pages/R%20Howto%20for%20Gizmo.aspx
 
@@ -456,12 +481,12 @@ http://centernet.fhcrc.org/CN/depts/hr/training/courses/Introduction_to_Gizmo.ht
 
 Batch job using slurm - R script
 ========================================================
-[A script for batch simulations](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_batch_code.R)
+[An R script for batch simulations](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_batch_code.R)
 
 Key differences from test_server_code.R:    
-1. Removed the `foreach` method because it was too slow.
-2. In addition to 10000 simulations, 2 different parameter values to cycle through (nested ldply).
-3. Instead of saving all of the raw output (millions of rows), aggregated the results.
+1. Removed the `foreach` method because it was too slow.    
+2. In addition to 10000 simulations, 2 different parameter values to cycle through (nested ldply).    
+3. Instead of saving all of the raw output (millions of rows), aggregated the results so one outcome per simulation per parameter setting. The goal is to count all of the simulations that had stochastic extinction (denoted T or F for each run).
 
 Took 1.2 minutes last time, with 2x more simulations, expect about 2ish minutes now.
 
@@ -474,7 +499,7 @@ sbatch --cpus-per-task=6 --time=0-2 --wrap="R --no-save --no-restore < test_batc
 Important options here:    
 1) We request a node with at least 6 cores for use using cpus-per-task=6    
 2) We estimate the time we require (days-hours) with time=0-2    
-3) There are additional options to email yourself updates (when the job finishes)   
+3) There are other available options not set here (e.g., email yourself updates when the job finishes)   
 4) Leave R options (no-save and no-restore) within the -wrap
 
 Check on your jobs (with your hutchID):    
@@ -500,13 +525,16 @@ After the job is finished, can quickly preview results:
 ```{r, eval = F, engine = "bash", out.width="1920px",height="1080px"} 
 less batch_results.csv
 ```
+![results](images/example_results.png)
+
+I might then transfer batch.results.csv to my computer for analyzing and graphing.
 
 Additional parallelization options
 ========================================================
 type:sub-section
 
-Each job is sent to a node where the cores are accessed for your program. Additionally, you have access to a lot of nodes (120?). Taking advantage of this can be very powerful:
-- Simplest method: Just send multiple jobs to the server (rerun the script and make sure you change output variable names in the R code)
+Each job is sent to a node where the cores are accessed for your program. By sending multiple jobs, you have access to a lot of nodes (>100 jobs running). Taking advantage of this can be very powerful:
+- Simplest method: Just send multiple jobs to the server (rerun the script and make sure you vary the output file names in the R code).
 - Write more complicated bash scripts that use loops: have the loop pass in values to R that can be used for different simulation settings.
 
 Bash loops (shell files)
@@ -520,7 +548,7 @@ sbatch --cpus-per-task=6 --time=0-1 --wrap="R --no-save --no-restore '--args inf
 done
 ```
 
-The '--args inf_set=$x' (single quotes required) defines the arguments to be passed (will be called inf_set in R). The $x grabs the values from x given in the loop command. Bash can be finicky, for example, don't add spaces between values in the loop.    
+The '--args inf_set=$x' (single quotes required) defines the arguments to be passed (will be called inf_set in R). The $x grabs the values from x given in the loop command. Bash can be finicky; for example, don't add spaces between values in the loop.    
 
 This code isn't for copying and pasting. Need to use a bash script file (.sh).    
 [bash script for loop](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/example_bash_loop.sh)
@@ -528,7 +556,7 @@ This code isn't for copying and pasting. Need to use a bash script file (.sh).
 Bash loops - passing values into R
 ========================================================
 
-The following R code must be in the R script:
+The following R code must be in the R script (I put it at the top):
 ```{r, eval = F}
 args<-(commandArgs(TRUE));
 if(length(args)==0){
@@ -550,6 +578,7 @@ if(inf_set == 2) infectivity_list = infectivity_list[2]
 out_file_name = paste("batch_results/batch_results_loop", inf_set, ".csv", sep = "") #output name varies by input; save in folder
 ```
 
+For this example, a batch_results folder must be created in the remote directory. [The R script is available here.](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_loopbatch_code.R)
 
 Running the bash script
 ========================================================
@@ -562,9 +591,11 @@ If you get a weird permission error, may need to do the following:
 chmod u+x example_bash_loop.sh
 ```
 
-Output from mulitple jobs
+If the job seemingly completes but there is no output, check the .out file for errors. Is there a batch_results subdirectory created?
+
+Output from multiple jobs
 ========================================================
-If you are running multiple jobs using the same script, make sure the output file names change or they will just be overwritten.    
+__If you are running multiple jobs using the same script, make sure the output file names change or they will just be overwritten.__    
 
 With multiple output files, it may be necessary to write a script to combine them.  Here is the script for this example.
 ```{r, eval = F}
@@ -588,9 +619,9 @@ type: sub-section
 
 A big drawback of using the server/command line: no convenient interactive software like RStudio.
 Tips:
-- Identify the output you want from your runs (.Rda files, csv's, plots)
-- Find a workflow: find a comfortable way to quickly access your results and update code as needed (i.e., using NoMachine or Cyberduck to pass things back and forth) [Workflow diagram](#/workflow)    
-- Anticipate bugs: don't let a 15 hour batch run go to waste because you wrote a write.csv command incorrectly at the end. Run an example batch first that should run quickly to check for bugs. Consider outputting results or printing status reports periodically.
+- Identify the output you want from your runs (.Rda files, csv's, plots).    
+- Find a workflow: find a comfortable way to quickly access your results and update code as needed (i.e., using NoMachine or Cyberduck to pass things back and forth) [Workflow diagram](#/workflow).    
+- Anticipate bugs: don't let a 15 hour batch run go to waste because you wrote a write.csv command incorrectly at the end or forgot to vary output file names. Run an example batch first that should run quickly to check for bugs. Consider outputting results or printing status reports periodically.
 - Parallelizing with nodes (looping batch scripts) means you may have to combine your output files.
 
 The End
@@ -649,8 +680,8 @@ Connecting to rhino - using PuTTY (download)
 ========================================================
 id: rhino_demo
 
-Download PuTTY:
-http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
+Download PuTTY:    
+http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html    
 The red box is what I downloaded.    
 ![alt text](images/putty_install.png)
 
@@ -659,7 +690,7 @@ The red box is what I downloaded.
 Connecting to rhino - using PuTTY (connecting)
 ========================================================
 
-Most of the settings are already set, just fill in the server and click Open.    
+Most of the settings are already set, just fill in the Host Name and click Open.    
 ![alt text](images/putty_connect.png)
 
 Connecting to rhino - using PuTTY (connecting)
