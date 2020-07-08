@@ -65,7 +65,7 @@ theme_set(theme_classic())
 source("Code/model_functions.R") #model functions in here
 ```
 
-[model function code](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/model_functions.R) 
+[model function code](https://github.com/mayerbry/cluster-presentation/blob/master/Code/model_functions.R) 
 
 Example of a simulation:
 ========================================================
@@ -79,7 +79,7 @@ print(Sys.time() - start_time)
 ```
 
 ```
-Time difference of 0.06643581 secs
+Time difference of 0.06658196 secs
 ```
 The simulation function takes four arguments: 1) the total time to run it for (max_time); 2) initial infected cells (initI); 3) initial cell infectivity (infectivity); and 4) parms (this a data.frame that is created in model_function.R).
 
@@ -539,8 +539,8 @@ Running the simulation script
 [plyr example](#/plyr_sim)
 
 Add the following to scripts to the server directory (for me "/users/bmayer/cluster-example/" from earlier):    
-[model function code](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/model_functions.R)    
-[a script to run simulations](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_server_code.R)
+[model function code](https://github.com/mayerbry/cluster-presentation/blob/master/Code/model_functions.R)    
+[a script to run simulations](https://github.com/mayerbry/cluster-presentation/blob/master/Code/test_server_code.R)
 
 
 ```bash
@@ -573,7 +573,7 @@ http://centernet.fhcrc.org/CN/depts/hr/training/courses/Introduction_to_Gizmo.ht
 
 Batch job using slurm - R script
 ========================================================
-[An R script for batch simulations](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_batch_code.R)
+[An R script for batch simulations](https://github.com/mayerbry/cluster-presentation/blob/master/Code/test_batch_code.R)
 
 Key differences from test_server_code.R:    
 1. Removed the `foreach` method because it was too slow.    
@@ -649,7 +649,7 @@ done
 The '--args inf_set=$x' (single quotes required) defines the arguments to be passed (will be called inf_set in R). The $x grabs the values from x given in the loop command. Bash can be finicky; for example, don't add spaces between values in the loop.    
 
 This code isn't for copying and pasting. Need to use a bash script file (.sh).    
-[bash script for loop](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/example_bash_loop.sh)
+[bash script for loop](https://github.com/mayerbry/cluster-presentation/blob/master/Code/example_bash_loop.sh)
 
 Bash loops - passing values into R
 ========================================================
@@ -678,7 +678,7 @@ if(inf_set == 2) infectivity_list = infectivity_list[2]
 out_file_name = paste("batch_results/batch_results_loop", inf_set, ".csv", sep = "") #output name varies by input; save in folder
 ```
 
-For this example, a batch_results folder must be created in the remote directory. [The R script is available here.](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/test_loopbatch_code.R)
+For this example, a batch_results folder must be created in the remote directory. [The R script is available here.](https://github.com/mayerbry/cluster-presentation/blob/master/Code/test_loopbatch_code.R)
 
 Running the bash script
 ========================================================
@@ -713,7 +713,7 @@ output = ldply(output_file_names, function(file_name){
 
 write.csv(output, "combined_batchloop_output.csv", row.names = F)
 ```
-[R script to combine output](https://github.fhcrc.org/bmayer/cluster-presentation/blob/master/Code/combine_batch_output.R)
+[R script to combine output](https://github.com/mayerbry/cluster-presentation/blob/master/Code/combine_batch_output.R)
 
 
 Summary using the remote servers

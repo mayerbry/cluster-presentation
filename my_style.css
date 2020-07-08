@@ -68,6 +68,11 @@
   max-height: none;
 }
 
+.codefont pre {
+    font-size: 0px;
+    line-height: 10px;
+}
+
 .reveal code.r {
     selection {
     background: white;
